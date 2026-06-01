@@ -13,7 +13,7 @@ on:
 jobs:
   build-vcpkg:
     name: Build Android vcpkg packages
-    runs-on: ubuntu-latest
+    runs-on: macos-14
     permissions:
       packages: write
       contents: read
@@ -24,14 +24,19 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake ninja-build pkg-config curl unzip zip zstd jq
+          brew install cmake ninja pkg-config ccache wget unzip jq
 
       - name: Detect Android SDK and NDK
         run: |
           set -euo pipefail
-          echo "ANDROID_HOME=${ANDROID_HOME:-$HOME/Android/Sdk}" >> "$GITHUB_ENV"
-          sdk_root="${ANDROID_HOME:-$HOME/Android/Sdk}"
+          if [[ -z "${ANDROID_HOME:-}" ]]; then
+            echo "ANDROID_HOME=$HOME/Library/Android/sdk" >> "$GITHUB_ENV"
+            sdk_root="$HOME/Library/Android/sdk"
+          else
+            echo "ANDROID_HOME=${ANDROID_HOME}" >> "$GITHUB_ENV"
+            sdk_root="${ANDROID_HOME}"
+          fi
+
           if [[ -d "${sdk_root}/ndk" ]]; then
             latest_ndk="$(find "${sdk_root}/ndk" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
             echo "ANDROID_NDK_HOME=${latest_ndk}" >> "$GITHUB_ENV"
