@@ -9,6 +9,9 @@ jobs:
   build:
     name: Build Android App (Godot)
     runs-on: macos-14
+    permissions:
+      packages: read
+      contents: read
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
 
@@ -67,12 +70,22 @@ jobs:
           git clone https://github.com/microsoft/vcpkg.git .devtools/vcpkg
           .devtools/vcpkg/bootstrap-vcpkg.sh
 
+      - name: Setup vcpkg NuGet binary cache
+        run: |
+          dotnet nuget add source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+            --name "GitHub" \
+            --username "${{ github.actor }}" \
+            --password "${{ secrets.GITHUB_TOKEN }}" \
+            --store-password-in-clear-text
+          echo "VCPKG_BINARY_SOURCES=clear;nuget,GitHub,readwrite" >> $GITHUB_ENV
+
       - name: Build Android Release
         run: |
           chmod +x ./build.sh
           export CMAKE_C_COMPILER_LAUNCHER=ccache
           export CMAKE_CXX_COMPILER_LAUNCHER=ccache
           export NDK_CCACHE=ccache
+          export CMAKE_MAKE_PROGRAM=$(which ninja)
 
           ./build.sh android release --abi=arm64-v8a --jobs=4
 
