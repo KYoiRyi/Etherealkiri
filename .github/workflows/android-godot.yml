@@ -1,0 +1,85 @@
+name: Android Build
+
+on:
+  push:
+    branches: [ "main", "refactor/godot-native-renderer" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Android App (Godot)
+    runs-on: macos-14
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Build Systems
+        run: |
+          brew install cmake ninja pkg-config ccache wget unzip
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Download Godot
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_macos.universal.zip
+          unzip -q Godot_v4.3-stable_macos.universal.zip
+          sudo mv Godot.app /Applications/Godot.app
+
+      - name: Download Godot Android Export Templates
+        run: |
+          mkdir -p ~/Library/Application\ Support/Godot/export_templates/4.3.stable
+          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz
+          unzip -q Godot_v4.3-stable_export_templates.tpz
+          mv templates/* ~/Library/Application\ Support/Godot/export_templates/4.3.stable/
+
+      - name: Detect Android SDK and NDK
+        run: |
+          set -euo pipefail
+          if [[ -z "${ANDROID_HOME:-}" ]]; then
+            echo "ANDROID_HOME=$HOME/Library/Android/sdk" >> "$GITHUB_ENV"
+            sdk_root="$HOME/Library/Android/sdk"
+          else
+            echo "ANDROID_HOME=${ANDROID_HOME}" >> "$GITHUB_ENV"
+            sdk_root="${ANDROID_HOME}"
+          fi
+
+          if [[ -d "${sdk_root}/ndk" ]]; then
+            latest_ndk="$(find "${sdk_root}/ndk" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
+            latest_ndk_version="$(basename "${latest_ndk}")"
+            echo "ANDROID_NDK_HOME=${latest_ndk}" >> "$GITHUB_ENV"
+            echo "ANDROID_NDK_VERSION=${latest_ndk_version}" >> "$GITHUB_ENV"
+          else
+            echo "Android NDK directory not found under ${sdk_root}/ndk" >&2
+            exit 1
+          fi
+
+      - name: Setup vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git .devtools/vcpkg
+          .devtools/vcpkg/bootstrap-vcpkg.sh
+
+      - name: Build Android Release
+        run: |
+          chmod +x ./build.sh
+          export CMAKE_C_COMPILER_LAUNCHER=ccache
+          export CMAKE_CXX_COMPILER_LAUNCHER=ccache
+          export NDK_CCACHE=ccache
+
+          ./build.sh android release --abi=arm64-v8a --jobs=4
+
+      - name: Upload Artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: AetherKiri-Godot-Android-APK
+          path: out/godot/android/release/*.apk
+          retention-days: 7
