@@ -23,7 +23,7 @@ jobs:
 
       - name: Install Build Systems
         run: |
-          brew install cmake ninja pkg-config ccache wget unzip
+          brew install cmake ninja pkg-config ccache wget unzip autoconf automake libtool
 
       - name: Set up Java
         uses: actions/setup-java@v3
