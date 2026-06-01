@@ -23,7 +23,7 @@ jobs:
 
       - name: Install Build Systems
         run: |
-          brew install cmake ninja pkg-config ccache wget unzip autoconf automake libtool
+          brew install cmake ninja pkg-config ccache wget unzip autoconf automake libtool bison
 
       - name: Set up Java
         uses: actions/setup-java@v3
@@ -96,6 +96,7 @@ jobs:
           export CMAKE_CXX_COMPILER_LAUNCHER=ccache
           export NDK_CCACHE=ccache
           export CMAKE_MAKE_PROGRAM=$(which ninja)
+          export PATH="/opt/homebrew/opt/bison/bin:$PATH"
 
           ./build.sh android release --abi=arm64-v8a --jobs=4
 
