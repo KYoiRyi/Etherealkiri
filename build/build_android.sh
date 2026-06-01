@@ -147,7 +147,7 @@ build_abi() {
         rm -f "$PROJECT_ROOT/out/android/$abi/debug/vcpkg_installed"
     fi
 
-    cmake --preset "$cmake_config_preset" --fresh
+    cmake --preset "$cmake_config_preset" --fresh -DCMAKE_MAKE_PROGRAM="$(which ninja)"
     cmake --build --preset "$cmake_build_preset" -- -j"$PARALLEL_JOBS"
 
     mkdir -p "$godot_bin_dir"
