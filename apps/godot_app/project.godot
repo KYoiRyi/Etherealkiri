@@ -15,7 +15,7 @@ game_path=""
 [application]
 
 config/name="AetherKiri"
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/boot.tscn"
 config/features=PackedStringArray("4.3")
 config/icon="res://assets/icon.png"
 
@@ -37,3 +37,9 @@ renderer/rendering_method.android="gl_compatibility"
 rendering_device/driver.ios="metal"
 rendering_device/driver.android="opengl3"
 textures/vram_compression/import_etc2_astc=true
+
+[debug]
+
+file_logging/enable_file_logging=true
+file_logging/enable_file_logging.pc=false
+file_logging/log_path="user://logs/godot.log"
