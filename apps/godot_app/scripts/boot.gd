@@ -5,6 +5,10 @@ var log_file: FileAccess = null
 var main_loaded := false
 
 func _ready():
+    # Request Android permissions explicitly
+    if OS.has_feature("os_android"):
+        OS.request_permissions()
+
     label.text = "Booting AetherKiri...\n"
     
     var copy_btn = Button.new()
