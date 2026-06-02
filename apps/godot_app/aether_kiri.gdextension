@@ -1,6 +1,6 @@
 [configuration]
 entry_symbol = "aether_kiri_library_init"
-compatibility_minimum = "4.6"
+compatibility_minimum = "4.3"
 
 [libraries]
 macos.debug = "res://bin/macos/debug/libaether_kiri_godot.dylib"

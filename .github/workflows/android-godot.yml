@@ -87,7 +87,7 @@ jobs:
             </packageSourceCredentials>
           </configuration>
           EOF
-          echo "VCPKG_BINARY_SOURCES=clear;nuget,GitHub,read;nugetconfig,${GITHUB_WORKSPACE}/nuget.config" >> $GITHUB_ENV
+          echo "VCPKG_BINARY_SOURCES=clear;nuget,GitHub,readwrite;nugetconfig,${GITHUB_WORKSPACE}/nuget.config" >> $GITHUB_ENV
 
       - name: Build Android Release
         run: |

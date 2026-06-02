@@ -16,7 +16,7 @@ game_path=""
 
 config/name="AetherKiri"
 run/main_scene="res://scenes/main.tscn"
-config/features=PackedStringArray("4.6")
+config/features=PackedStringArray("4.3")
 config/icon="res://assets/icon.png"
 
 [display]
