@@ -89,14 +89,6 @@ jobs:
           EOF
           echo "VCPKG_BINARY_SOURCES=clear;nuget,GitHub,readwrite;nugetconfig,${GITHUB_WORKSPACE}/nuget.config" >> $GITHUB_ENV
 
-      - name: Build macOS Native Libraries (for Editor)
-        run: |
-          chmod +x ./build.sh
-          export CMAKE_C_COMPILER_LAUNCHER=ccache
-          export CMAKE_CXX_COMPILER_LAUNCHER=ccache
-          export CMAKE_MAKE_PROGRAM=$(which ninja)
-          export PATH="/opt/homebrew/opt/bison/bin:$PATH"
-          GODOT_BIN="" ./build.sh macos release --jobs=4
 
       - name: Build Android Release
         run: |
