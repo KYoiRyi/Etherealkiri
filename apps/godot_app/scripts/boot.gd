@@ -29,9 +29,9 @@ func _process(delta: float):
             log_file = FileAccess.open("user://logs/godot.log", FileAccess.READ)
     
     if log_file != null:
-        var new_text := log_file.get_as_text()
-        if new_text.length() > 0:
-            label.text += new_text
+        while log_file.get_position() < log_file.get_length():
+            var line = log_file.get_line()
+            label.text += line + "\n"
     
     if not main_loaded:
         var status = ResourceLoader.load_threaded_get_status("res://scenes/main.tscn")

@@ -270,8 +270,38 @@ else
         EXPORT_PRESET="iOS Release"
         EXPORT_MODE="--export-release"
     fi
+    # Check if GDExtension library for the host OS exists to decide if we need to copy the mock script
+    local host_lib_exists=false
+    local host_os
+    host_os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+    if [[ "$host_os" == "darwin" ]]; then
+        if [[ -f "$GODOT_APP_DIR/bin/macos/$BUILD_TYPE_LOWER/libaether_kiri_godot.dylib" ]]; then
+            host_lib_exists=true
+        fi
+    elif [[ "$host_os" == "linux" ]]; then
+        if [[ -f "$GODOT_APP_DIR/bin/linux/$BUILD_TYPE_LOWER/libaether_kiri_godot.so" ]]; then
+            host_lib_exists=true
+        fi
+    fi
+
+    local mock_copied=false
+    if [[ "$host_lib_exists" == "false" ]]; then
+        echo "==> Host GDExtension library not found. Copying mock AetherKiriPlayer script for export..."
+        cp "$GODOT_APP_DIR/scripts/AetherKiriPlayerMock.gd.mock" "$GODOT_APP_DIR/scripts/AetherKiriPlayerMock.gd"
+        mock_copied=true
+    fi
+
+    # Headless asset import step to generate class cache and avoid load/parsing errors
+    echo "==> Importing Godot assets headlessly (headless editor)..."
+    "$GODOT_BIN" --headless --editor --path "$GODOT_APP_DIR" --quit || true
+
     "$GODOT_BIN" --headless --path "$GODOT_APP_DIR" \
         "$EXPORT_MODE" "$EXPORT_PRESET" "$PROJECT_ROOT/out/godot/ios/$BUILD_TYPE_LOWER/AetherKiri.xcodeproj"
+
+    if [[ "$mock_copied" == "true" ]]; then
+        echo "==> Cleaning up mock script..."
+        rm -f "$GODOT_APP_DIR/scripts/AetherKiriPlayerMock.gd"
+    fi
     if [[ "$SIMULATOR" == true ]]; then
         verify_exported_simulator_template_arch "$PROJECT_ROOT/out/godot/ios/$BUILD_TYPE_LOWER" "$SIMULATOR_ARCH"
     fi

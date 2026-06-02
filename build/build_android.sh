@@ -176,6 +176,31 @@ elif [[ ! -f "$GODOT_TEMPLATE_DIR/android_debug.apk" || ! -f "$GODOT_TEMPLATE_DI
     echo "Warning: Godot Android export templates are missing in $GODOT_TEMPLATE_DIR; native libraries were staged only." >&2
     echo "         Expected android_debug.apk and android_release.apk." >&2
 else
+    # Check if GDExtension library for the host OS exists to decide if we need to copy the mock script
+    local host_lib_exists=false
+    local host_os
+    host_os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+    if [[ "$host_os" == "darwin" ]]; then
+        if [[ -f "$GODOT_APP_DIR/bin/macos/$BUILD_TYPE_LOWER/libaether_kiri_godot.dylib" ]]; then
+            host_lib_exists=true
+        fi
+    elif [[ "$host_os" == "linux" ]]; then
+        if [[ -f "$GODOT_APP_DIR/bin/linux/$BUILD_TYPE_LOWER/libaether_kiri_godot.so" ]]; then
+            host_lib_exists=true
+        fi
+    fi
+
+    local mock_copied=false
+    if [[ "$host_lib_exists" == "false" ]]; then
+        echo "==> Host GDExtension library not found. Copying mock AetherKiriPlayer script for export..."
+        cp "$GODOT_APP_DIR/scripts/AetherKiriPlayerMock.gd.mock" "$GODOT_APP_DIR/scripts/AetherKiriPlayerMock.gd"
+        mock_copied=true
+    fi
+
+    # Headless asset import step to generate class cache and avoid load/parsing errors
+    echo "==> Importing Godot assets headlessly (headless editor)..."
+    "$GODOT_BIN" --headless --editor --path "$GODOT_APP_DIR" --quit || true
+
     echo "==> Exporting Godot Android APK"
     mkdir -p "$PROJECT_ROOT/out/godot/android/$BUILD_TYPE_LOWER"
     export_path="$PROJECT_ROOT/out/godot/android/$BUILD_TYPE_LOWER/AetherKiri-$BUILD_TYPE_LOWER.apk"
@@ -186,6 +211,11 @@ else
     fi
     "$GODOT_BIN" --headless --path "$GODOT_APP_DIR" \
         "$export_mode" "$export_preset" "$export_path"
+
+    if [[ "$mock_copied" == "true" ]]; then
+        echo "==> Cleaning up mock script..."
+        rm -f "$GODOT_APP_DIR/scripts/AetherKiriPlayerMock.gd"
+    fi
 fi
 
 echo "Android build output: $PROJECT_ROOT/out/godot/android/$BUILD_TYPE_LOWER"

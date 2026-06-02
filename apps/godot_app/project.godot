@@ -41,6 +41,6 @@ textures/vram_compression/import_etc2_astc=true
 [debug]
 
 file_logging/enable_file_logging=true
-file_logging/enable_file_logging.pc=false
+file_logging/enable_file_logging.pc=true
 file_logging/log_path="user://logs/godot.log"
 application/config/use_external_storage=true
