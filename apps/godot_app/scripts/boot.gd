@@ -1,33 +1,38 @@
 extends Control
 
 @onready var label = $ColorRect/Label
-@onready var timer = $Timer
+var log_file: FileAccess = null
+var main_loaded := false
 
 func _ready():
-    # Wait a frame to ensure drawing
-    timer.start(0.5)
+    label.text = "Booting AetherKiri...\n"
+    # Start loading in background to not block the main thread
+    ResourceLoader.load_threaded_request("res://scenes/main.tscn")
 
-func _on_timer_timeout():
-    # Attempt to load the main scene
-    var main_res = ResourceLoader.load("res://scenes/main.tscn")
-    if main_res != null:
-        var main_node = main_res.instantiate()
-        if main_node != null:
-            get_tree().root.add_child(main_node)
-            queue_free()
-            return
+func _process(delta: float):
+    # Continuously read Godot log if available
+    if log_file == null:
+        if FileAccess.file_exists("user://logs/godot.log"):
+            log_file = FileAccess.open("user://logs/godot.log", FileAccess.READ)
     
-    # If we are here, it failed.
-    _show_error()
-
-func _show_error():
-    var err_text = "CRITICAL BOOT ERROR\nFailed to load 'res://scenes/main.tscn' or instantiate it.\nThis usually means the native GDExtension (AetherKiriPlayer) failed to load.\n\n--- GODOT LOG ---\n"
-    
-    var log_file = FileAccess.open("user://logs/godot.log", FileAccess.READ)
     if log_file != null:
-        err_text += log_file.get_as_text()
-        log_file.close()
-    else:
-        err_text += "[Godot log file not found at user://logs/godot.log]"
+        var new_text := log_file.get_as_text()
+        if new_text.length() > 0:
+            label.text += new_text
     
-    label.text = err_text
+    if not main_loaded:
+        var status = ResourceLoader.load_threaded_get_status("res://scenes/main.tscn")
+        if status == ResourceLoader.THREAD_LOAD_LOADED:
+            var main_res = ResourceLoader.load_threaded_get("res://scenes/main.tscn")
+            var main_node = main_res.instantiate()
+            if main_node.get_script() == null:
+                main_loaded = true
+                label.text += "\n\n[CRITICAL] main.gd failed to compile/attach! Native extension probably failed to load."
+            else:
+                main_loaded = true
+                get_tree().root.add_child(main_node)
+                queue_free()
+        elif status == ResourceLoader.THREAD_LOAD_FAILED or status == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+            main_loaded = true
+            label.text += "\n\n[CRITICAL] Failed to load main.tscn! Native extension probably failed to load."
+
