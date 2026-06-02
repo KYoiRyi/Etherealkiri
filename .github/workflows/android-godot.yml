@@ -10,7 +10,7 @@ jobs:
     name: Build Android App (Godot)
     runs-on: macos-14
     permissions:
-      packages: read
+      packages: write
       contents: read
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
