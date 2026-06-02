@@ -70,16 +70,24 @@ jobs:
           git clone https://github.com/microsoft/vcpkg.git .devtools/vcpkg
           .devtools/vcpkg/bootstrap-vcpkg.sh
 
-      - name: Export GitHub Actions cache variables for vcpkg
-        uses: actions/github-script@v7
-        with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
-
-      - name: Setup vcpkg GitHub Actions binary cache
+      - name: Setup vcpkg NuGet binary cache
         run: |
-          echo "VCPKG_BINARY_SOURCES=clear;x-gha,readwrite" >> $GITHUB_ENV
+          cat <<EOF > nuget.config
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="GitHub" value="https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" />
+            </packageSources>
+            <packageSourceCredentials>
+              <GitHub>
+                <add key="Username" value="${{ github.actor }}" />
+                <add key="ClearTextPassword" value="${{ secrets.GITHUB_TOKEN }}" />
+              </GitHub>
+            </packageSourceCredentials>
+          </configuration>
+          EOF
+          echo "VCPKG_BINARY_SOURCES=clear;nuget,GitHub,readwrite;nugetconfig,${GITHUB_WORKSPACE}/nuget.config" >> $GITHUB_ENV
 
 
       - name: Build Android Release
