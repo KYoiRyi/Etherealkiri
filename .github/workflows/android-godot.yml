@@ -91,6 +91,32 @@ jobs:
           EOF
           echo "VCPKG_BINARY_SOURCES=clear;nuget,GitHub,readwrite;nugetconfig,${GITHUB_WORKSPACE}/nuget.config" >> $GITHUB_ENV
           echo "VCPKG_NUGET_REPOSITORY=https://github.com/${{ github.repository }}" >> $GITHUB_ENV
+          echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+          echo "GH_OWNER=${{ github.repository_owner }}" >> $GITHUB_ENV
+
+          # INTERCEPT MONO NUGET PUSH to fix TLS timeout bug
+          sudo mv /usr/bin/mono /usr/bin/mono.bak
+          cat <<'EOF' | sudo tee /usr/bin/mono
+          #!/bin/bash
+          ARGS=("$@")
+          PUSH=0
+          NUPKG=""
+          for arg in "${ARGS[@]}"; do
+              if [[ "$arg" == "push" ]]; then
+                  PUSH=1
+              elif [[ "$arg" == *.nupkg ]]; then
+                  NUPKG="$arg"
+              fi
+          done
+
+          if [[ $PUSH -eq 1 && -n "$NUPKG" ]]; then
+              echo "INTERCEPTED: Mono TLS bug workaround. Using dotnet nuget push for $NUPKG"
+              dotnet nuget push "$NUPKG" --source "https://nuget.pkg.github.com/${GH_OWNER}/index.json" --api-key "$GH_TOKEN" --skip-duplicate
+          else
+              exec /usr/bin/mono.bak "${ARGS[@]}"
+          fi
+          EOF
+          sudo chmod +x /usr/bin/mono
 
 
       - name: Build Android Release
