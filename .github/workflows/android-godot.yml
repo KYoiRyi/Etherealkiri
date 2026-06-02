@@ -126,7 +126,8 @@ jobs:
           export CMAKE_CXX_COMPILER_LAUNCHER=ccache
           export NDK_CCACHE=ccache
           export CMAKE_MAKE_PROGRAM=$(which ninja-build)
-          export GODOT_BIN="godot"
+          export GODOT_BIN="/usr/local/bin/godot"
+          export GODOT_TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/4.3.stable"
 
           ./build.sh android release --abi=arm64-v8a --jobs=4
 
