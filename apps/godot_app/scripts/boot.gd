@@ -40,7 +40,8 @@ func _process(delta: float):
             var main_node = main_res.instantiate()
             if main_node.get_script() == null:
                 main_loaded = true
-                label.text += "\n\n[CRITICAL] main.gd failed to compile/attach! Native extension probably failed to load."
+                label.text += "\n\n[CRITICAL] main.gd failed to compile! Native extension failed to load."
+                _fetch_and_show_logcat()
             else:
                 main_loaded = true
                 get_tree().root.add_child(main_node)
@@ -48,4 +49,23 @@ func _process(delta: float):
         elif status == ResourceLoader.THREAD_LOAD_FAILED or status == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
             main_loaded = true
             label.text += "\n\n[CRITICAL] Failed to load main.tscn! Native extension probably failed to load."
+            _fetch_and_show_logcat()
+
+func _fetch_and_show_logcat():
+    label.text += "\n\n--- FETCHING ANDROID LOGCAT ---\n"
+    var output = []
+    # Run logcat command to dump the last 500 lines of the current app's logs
+    var err = OS.execute("logcat", ["-d", "-t", "500"], output, true)
+    if output.size() > 0:
+        var log_text = output[0]
+        label.text += log_text
+        
+        # Save it to user:// manually so it's guaranteed to exist
+        var f = FileAccess.open("user://my_godot_crash_log.txt", FileAccess.WRITE)
+        if f != null:
+            f.store_string(label.text)
+            f.close()
+            label.text += "\n\n[Log saved to user://my_godot_crash_log.txt]"
+    else:
+        label.text += "\nFailed to fetch logcat or output is empty. (Error: " + str(err) + ")"
 
