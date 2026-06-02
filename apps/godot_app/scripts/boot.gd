@@ -6,6 +6,15 @@ var main_loaded := false
 
 func _ready():
     label.text = "Booting AetherKiri...\n"
+    
+    var copy_btn = Button.new()
+    copy_btn.text = "COPY LOG TO CLIPBOARD"
+    copy_btn.position = Vector2(50, 50)
+    copy_btn.size = Vector2(400, 100)
+    copy_btn.add_theme_font_size_override("font_size", 30)
+    copy_btn.pressed.connect(func(): DisplayServer.clipboard_set(label.text))
+    add_child(copy_btn)
+    
     # Start loading in background to not block the main thread
     ResourceLoader.load_threaded_request("res://scenes/main.tscn")
 
